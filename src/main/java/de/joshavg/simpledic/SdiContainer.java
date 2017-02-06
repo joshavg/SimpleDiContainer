@@ -1,27 +1,27 @@
 package de.joshavg.simpledic;
 
-import com.google.common.annotations.VisibleForTesting;
+import de.joshavg.simpledic.exception.ClassNotRegistered;
 import de.joshavg.simpledic.exception.ContainerInitException;
-import de.joshavg.simpledic.exception.DependencyNotSatisfiedException;
-import de.joshavg.simpledic.exception.SdicClassNotFoundException;
-
+import de.joshavg.simpledic.exception.SdicInstantiationException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Properties;
-import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SdiContainer {
 
-    private final Properties props;
+    private static final Logger LOG = LoggerFactory.getLogger(SdiContainer.class);
 
-    @VisibleForTesting
-    SdiContainer(Properties props) {
+    private final Properties props;
+    private final List<ServiceDefinition> definitions;
+
+    private SdiContainer(Properties props, List<ServiceDefinition> definitions) {
         this.props = props;
+        this.definitions = definitions;
     }
 
     public static SdiContainer load() {
@@ -32,74 +32,40 @@ public class SdiContainer {
         Properties props = new Properties();
 
         InputStream inputStream = SdiContainer.class.getClassLoader().getResourceAsStream(filename);
+        if (inputStream == null) {
+            throw new ContainerInitException("config file " + filename + " not found", null);
+        }
+
         try {
             props.load(inputStream);
         } catch (IOException e) {
             throw new ContainerInitException("failed loading properties", e);
         }
 
-        SdiContainer container = new SdiContainer(props);
-        container.integrityCheck();
-        return container;
+        IntegrityCheck integrityCheck = new IntegrityCheck(props);
+        integrityCheck.check();
+        return new SdiContainer(props, integrityCheck.getDefinitions());
     }
 
-    private void integrityCheck() {
-        List<Class<?>> services = fetchAllServices();
-        checkConstructorDependencies(services);
+    private List<Class<?>> serviceClasses() {
+        return definitions.stream().map(ServiceDefinition::getClz).collect(Collectors.toList());
     }
 
-    private List<Class<?>> fetchAllServices() {
-        return props.entrySet().stream()
-                    .filter(e -> isServiceName(e.getKey().toString()))
-                    .map(e -> e.getValue().toString())
-                    .map(n -> {
-                        try {
-                            return Class.forName(n);
-                        } catch (ClassNotFoundException e) {
-                            throw new SdicClassNotFoundException(e);
-                        }
-                    }).collect(Collectors.toList());
-    }
-
-    private void checkConstructorDependencies(List<Class<?>> services) {
-        for(Class<?> c : services) {
-            Constructor<?>[] constructors = c.getDeclaredConstructors();
-            for(Constructor constructor : constructors) {
-                Class[] parameterTypes = constructor.getParameterTypes();
-                System.out.println(Arrays.toString(parameterTypes));
-                System.out.println(Arrays.asList(parameterTypes));
-            }
+    public <T> T createInstance(Class<T> clz) {
+        if (clz == null) {
+            throw new NullPointerException();
         }
-      /*  services.stream()
-                // get all constructors
-                .map(Class::getDeclaredConstructors)
-                .reduce(new ArrayList<Constructor>(),
-                        (l, arr) -> {
-                            l.addAll(Arrays.asList(arr));
-                            return l;
-                        },
-                        (l1, l2) -> l1)
-                // get all parameter types
-                .stream()
-                .map(Constructor::getParameterTypes)
-                .reduce(new ArrayList<Class<?>>(),
-                        (l, arr) -> {
-                            l.addAll(Arrays.asList(arr));
-                            return l;
-                        },
-                        (l1, l2) -> l1)
-                // search for services with needed types
-                .stream()
-                .distinct()
-                .forEach(t -> {
-                    if (!services.contains(t)) {
-                        throw new DependencyNotSatisfiedException(t);
-                    }
-                });*/
+
+        LOG.trace("instance ordered: ", clz);
+        if (!serviceClasses().contains(clz)) {
+            throw new ClassNotRegistered(clz);
+        }
+
+        try {
+            return new Instantiator<>(clz).createInstance();
+        } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
+            throw new SdicInstantiationException(e);
+        }
     }
 
-    @VisibleForTesting
-    static boolean isServiceName(String name) {
-        return name.startsWith("service.");
-    }
 }
