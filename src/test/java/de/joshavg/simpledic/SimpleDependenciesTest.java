@@ -5,7 +5,7 @@ import org.junit.Test;
 
 public class SimpleDependenciesTest {
 
-    private static final String FILENAME = "almostsane.properties";
+    private static final String FILENAME = "sane.properties";
 
     @Test
     public void testIntegrityCheck() {
@@ -15,6 +15,6 @@ public class SimpleDependenciesTest {
     @Test
     public void createOneDependencyService() {
         SdiContainer container = SdiContainer.load(FILENAME);
-        container.createInstance(DependsOnNoDependencies.class);
+        container.getInstance(DependsOnNoDependencies.class);
     }
 }

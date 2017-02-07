@@ -13,6 +13,7 @@ public class IntegrityCheckTest {
         assertThat(IntegrityCheck.isServiceName("service"), is(false));
         assertThat(IntegrityCheck.isServiceName("service."), is(false));
         assertThat(IntegrityCheck.isServiceName("service.a"), is(true));
+        assertThat(IntegrityCheck.isServiceName("service.a.singleton"), is(false));
     }
 
 }

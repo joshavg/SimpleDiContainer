@@ -1,13 +1,14 @@
 package de.joshavg.simpledic;
 
-import com.google.common.annotations.VisibleForTesting;
 import de.joshavg.simpledic.exception.ClassNotRegistered;
 import de.joshavg.simpledic.exception.integrity.DependencyCycleDetected;
 import de.joshavg.simpledic.exception.integrity.DependencyNotSatisfied;
 import de.joshavg.simpledic.exception.integrity.DuplicatedServiceClassesFound;
 import de.joshavg.simpledic.exception.integrity.MoreThanOneConstructor;
+import de.joshavg.simpledic.exception.integrity.NoVisibleConstructor;
 import de.joshavg.simpledic.exception.integrity.SdicClassNotFound;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -91,10 +92,19 @@ class IntegrityCheck {
     }
 
     private void collectConstructors(ArrayList<Constructor> l, Constructor<?>[] arr) {
+        if(arr.length == 0) {
+            return;
+        }
+
         Class<?> clz = arr[0].getDeclaringClass();
         if (arr.length > 1) {
             throw new MoreThanOneConstructor(clz);
         }
+
+        if(!Modifier.isPublic(arr[0].getModifiers())) {
+            throw new NoVisibleConstructor(clz);
+        }
+
         l.add(arr[0]);
         findDefinition(clz).setConstructor(arr[0]);
     }
@@ -131,9 +141,8 @@ class IntegrityCheck {
         }
     }
 
-    @VisibleForTesting
     static boolean isServiceName(String name) {
-        return !"service.".equals(name) && name.startsWith("service.");
+        return name.matches("service\\.[^.]+");
     }
 
     List<ServiceDefinition> getDefinitions() {
