@@ -30,8 +30,4 @@ class Instantiator<T> {
         return constructor.newInstance(parameters);
     }
 
-    T createSingleton() {
-        return null;
-    }
-
 }

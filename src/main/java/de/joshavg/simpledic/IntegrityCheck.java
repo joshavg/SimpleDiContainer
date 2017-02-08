@@ -92,7 +92,7 @@ class IntegrityCheck {
     }
 
     private void collectConstructors(ArrayList<Constructor> l, Constructor<?>[] arr) {
-        if(arr.length == 0) {
+        if (arr.length == 0) {
             return;
         }
 
@@ -101,7 +101,7 @@ class IntegrityCheck {
             throw new MoreThanOneConstructor(clz);
         }
 
-        if(!Modifier.isPublic(arr[0].getModifiers())) {
+        if (!Modifier.isPublic(arr[0].getModifiers())) {
             throw new NoVisibleConstructor(clz);
         }
 
@@ -121,9 +121,7 @@ class IntegrityCheck {
     }
 
     private void checkCycles() {
-        definitions.forEach(def -> {
-            checkConstructorParameter(null, def.getClz());
-        });
+        definitions.forEach(def -> checkConstructorParameter(def.getClz(), null));
     }
 
     private void checkConstructorParameter(Class<?> rootClz, Class<?> paramClz) {
@@ -131,13 +129,16 @@ class IntegrityCheck {
             throw new DependencyCycleDetected(rootClz);
         }
 
-        Class<?>[] parameterTypes = findDefinition(paramClz).getConstructor().getParameterTypes();
+        ServiceDefinition def;
+        if (paramClz == null) {
+            def = findDefinition(rootClz);
+        } else {
+            def = findDefinition(paramClz);
+        }
+
+        Class<?>[] parameterTypes = def.getConstructor().getParameterTypes();
         for (Class<?> innerParamClz : parameterTypes) {
-            if (rootClz == null) {
-                checkConstructorParameter(paramClz, innerParamClz);
-            } else {
-                checkConstructorParameter(rootClz, innerParamClz);
-            }
+            checkConstructorParameter(rootClz, innerParamClz);
         }
     }
 
