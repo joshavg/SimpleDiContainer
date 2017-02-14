@@ -7,31 +7,73 @@ class ServiceDefinition {
     private Class<?> clz;
     private String name;
     private Constructor<?> constructor;
+    private boolean isSingleton;
 
-    public Class<?> getClz() {
+    Class<?> getClz() {
         return clz;
     }
 
-    public ServiceDefinition setClz(Class<?> clz) {
+    ServiceDefinition setClz(Class<?> clz) {
         this.clz = clz;
         return this;
     }
 
-    public String getName() {
+    String getName() {
         return name;
     }
 
-    public ServiceDefinition setName(String name) {
+    ServiceDefinition setName(String name) {
         this.name = name;
         return this;
     }
 
-    public Constructor<?> getConstructor() {
+    Constructor getConstructor() {
         return constructor;
     }
 
-    public ServiceDefinition setConstructor(Constructor<?> constructor) {
+    ServiceDefinition setConstructor(Constructor<?> constructor) {
         this.constructor = constructor;
         return this;
+    }
+
+    boolean isSingleton() {
+        return isSingleton;
+    }
+
+    ServiceDefinition setSingleton(boolean singleton) {
+        isSingleton = singleton;
+        return this;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ServiceDefinition that = (ServiceDefinition) o;
+
+        if (isSingleton != that.isSingleton) {
+            return false;
+        }
+        if (!clz.equals(that.clz)) {
+            return false;
+        }
+        if (!name.equals(that.name)) {
+            return false;
+        }
+        return constructor.equals(that.constructor);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = clz.hashCode();
+        result = 31 * result + name.hashCode();
+        result = 31 * result + constructor.hashCode();
+        result = 31 * result + (isSingleton ? 1 : 0);
+        return result;
     }
 }

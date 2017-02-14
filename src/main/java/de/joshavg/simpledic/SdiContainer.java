@@ -9,9 +9,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,20 +17,20 @@ public class SdiContainer implements SdiContainerInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(SdiContainer.class);
 
-    private final Properties props;
     private final List<ServiceDefinition> definitions;
-    private final Map<Class<?>, Object> singletons;
+    private final Map<ServiceDefinition, Object> singletons;
 
-    private SdiContainer(Properties props, List<ServiceDefinition> definitions) {
-        this.props = props;
+    private SdiContainer(List<ServiceDefinition> definitions) {
         this.definitions = definitions;
         this.singletons = new HashMap<>();
     }
 
+    @SuppressWarnings("unused")
     public static SdiContainer load() {
         return load("sdic.properties");
     }
 
+    @SuppressWarnings("WeakerAccess")
     public static SdiContainer load(String filename) {
         Properties props = new Properties();
 
@@ -49,47 +47,47 @@ public class SdiContainer implements SdiContainerInterface {
 
         IntegrityCheck integrityCheck = new IntegrityCheck(props);
         integrityCheck.check();
-        return new SdiContainer(props, integrityCheck.getDefinitions());
+        return new SdiContainer(integrityCheck.getDefinitions());
     }
 
-    private List<Class<?>> serviceClasses() {
-        return definitions.stream().map(ServiceDefinition::getClz).collect(Collectors.toList());
+    private <T> ServiceDefinition getDefinition(Class<T> clz) {
+        return definitions.stream()
+            .filter(d -> d.getClz() == clz)
+            .findFirst()
+            .orElse(null);
     }
 
     @Override
     public <T> T getInstance(Class<T> clz) {
         LOG.trace("instance ordered: ", clz);
-        if (!serviceClasses().contains(clz)) {
+        ServiceDefinition definition = getDefinition(clz);
+        if (definition == null) {
             throw new ClassNotRegistered(clz);
         }
 
-        if (isStoredAsSingleton(clz)) {
-            return clz.cast(singletons.get(clz));
+        LOG.debug("service name is {}", definition.getName());
+
+        if (isStoredAsSingleton(definition)) {
+            return clz.cast(singletons.get(definition));
         }
 
         try {
             T instance = new Instantiator<>(clz, this).createInstance();
-            handleSingleton(clz, instance);
+            handleSingleton(definition, instance);
             return instance;
         } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
             throw new SdicInstantiationException(e);
         }
     }
 
-    private <T> void handleSingleton(Class<T> clz, T instance) {
-        String key = props.entrySet().stream()
-            .filter(e -> Objects.equals(clz.getName(), String.valueOf(e.getValue())))
-            .map(e -> e.getKey().toString())
-            .findFirst()
-            .orElse("");
-
-        if (props.containsKey(key + ".singleton") && "true".equals(props.get(key + ".singleton"))) {
-            singletons.put(clz, instance);
+    private <T> void handleSingleton(ServiceDefinition definition, T instance) {
+        if (definition.isSingleton()) {
+            singletons.put(definition, instance);
         }
     }
 
-    private <T> boolean isStoredAsSingleton(Class<T> clz) {
-        return singletons.containsKey(clz);
+    private boolean isStoredAsSingleton(ServiceDefinition def) {
+        return singletons.containsKey(def);
     }
 
 }

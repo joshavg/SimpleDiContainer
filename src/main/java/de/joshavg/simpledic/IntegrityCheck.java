@@ -56,12 +56,20 @@ class IntegrityCheck {
                 LOG.info("found service class for name {}: {}", key, value);
                 try {
                     Class<?> clz = Class.forName(value);
-                    definitions.add(new ServiceDefinition().setClz(clz).setName(value));
+                    definitions.add(new ServiceDefinition()
+                        .setClz(clz)
+                        .setName(key)
+                        .setSingleton(isSingleton(key)));
                     return clz;
                 } catch (ClassNotFoundException e) {
                     throw new SdicClassNotFound(e);
                 }
             }).collect(Collectors.toList());
+    }
+
+    private boolean isSingleton(String name) {
+        return props.containsKey(name + ".singleton") && "true"
+            .equals(props.get(name + ".singleton"));
     }
 
     private void checkConstructorDependencies(List<Class<?>> services) {
