@@ -1,4 +1,4 @@
 package de.joshavg.simpledic.services;
 
-public class NoDependencies {
+public class NoDependencies implements ServiceInterface {
 }

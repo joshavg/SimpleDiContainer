@@ -19,6 +19,20 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Takes a loaded Properties file, analyzes the {@link ServiceDefinition}s and
+ * checks them for sanity and integrity
+ * <p>
+ * These Checks are performed:
+ * <ol>
+ *   <li>duplicated FQCNs</li>
+ *   <li>dependency cycles</li>
+ *   <li>dependency availability</li>
+ *   <li>class availability</li>
+ *   <li>constructor visibility</li>
+ *   <li>constructor count</li>
+ * </ol>
+ */
 class IntegrityCheck {
 
     private static final Logger LOG = LoggerFactory.getLogger(IntegrityCheck.class);
@@ -151,7 +165,7 @@ class IntegrityCheck {
     }
 
     static boolean isServiceName(String name) {
-        return name.matches("service\\.[^.]+");
+        return name.matches("^service\\.[^.]+$");
     }
 
     List<ServiceDefinition> getDefinitions() {

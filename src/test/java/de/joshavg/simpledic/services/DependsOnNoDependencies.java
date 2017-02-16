@@ -1,6 +1,6 @@
 package de.joshavg.simpledic.services;
 
-public class DependsOnNoDependencies {
+public class DependsOnNoDependencies implements ServiceInterface {
 
     private final NoDependencies b;
 
