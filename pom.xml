@@ -6,8 +6,34 @@
 
     <groupId>de.joshavg</groupId>
     <artifactId>simpledic</artifactId>
-    <version>0.1-RC</version>
+    <version>0.1.0</version>
+    <packaging>jar</packaging>
+
     <name>SimpleDiContainer</name>
+    <description>Simple and reasonable DI Container</description>
+    <url>https://github.com/joshavg/simpledicontainer</url>
+
+    <licenses>
+        <license>
+            <name>GNU GENERAL PUBLIC LICENSE, Version 3</name>
+            <url>https://www.gnu.org/licenses/gpl-3.0.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <url>https://github.com/joshavg/simpledicontainer</url>
+    </scm>
+
+    <developers>
+        <developer>
+            <name>Josha von Gizycki</name>
+            <url>http://joshavg.de</url>
+            <roles>
+                <role>head</role>
+            </roles>
+        </developer>
+    </developers>
 
     <build>
         <plugins>
