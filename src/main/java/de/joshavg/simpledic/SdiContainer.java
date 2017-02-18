@@ -124,7 +124,7 @@ public class SdiContainer implements SdiContainerInterface {
      * returns all registered services that implement or extend the given class
      *
      * @param clz parent class or interface
-     * @param T type of the requested service
+     * @param <T> type of the requested service
      * @return the list with instances, or an empty list if nothing is found
      */
     @SuppressWarnings("WeakerAccess")
