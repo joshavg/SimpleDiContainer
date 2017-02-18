@@ -19,10 +19,10 @@ import org.slf4j.LoggerFactory;
  * and creates instances of defined services
  * <p>
  * Services are given arbitrary names and can be defined as singletons:
- * <code><pre>
+ * <pre><code>
  * service.servicename: tld.vendor.project.ServiceClass
  * service.servicename.singleton: true
- * </pre></code>
+ * </code></pre>
  * Service names must match the regular expression <code>^service\.[^.]+$</code>
  * <p>
  * Services declare their dependencies via their constructor. Only one
@@ -124,6 +124,7 @@ public class SdiContainer implements SdiContainerInterface {
      * returns all registered services that implement or extend the given class
      *
      * @param clz parent class or interface
+     * @param T type of the requested service
      * @return the list with instances, or an empty list if nothing is found
      */
     @SuppressWarnings("WeakerAccess")
