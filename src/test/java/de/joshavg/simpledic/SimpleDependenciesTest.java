@@ -9,6 +9,7 @@ import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 
 import de.joshavg.simpledic.services.DependsOnNoDependencies;
+import de.joshavg.simpledic.services.NoDependencies;
 import de.joshavg.simpledic.services.ServiceInterface;
 import java.util.List;
 import org.junit.Test;
@@ -32,6 +33,16 @@ public class SimpleDependenciesTest {
     public void serviceImplementationsAreReturned() {
         SdiContainer container = SdiContainer.load(FILENAME);
         List<ServiceInterface> list = container.getInstancesThatImplement(ServiceInterface.class);
+
+        assertThat(list, hasSize(2));
+        list.forEach(s -> assertThat(s, instanceOf(ServiceInterface.class)));
+    }
+
+    @Test
+    public void allServiceImplementationsAreReturnedWhenSearchedForObject() {
+        SdiContainer container = SdiContainer.load(FILENAME);
+        List<Object> list = container
+            .getInstancesThatMatch(d -> d.getName().startsWith("service."));
 
         assertThat(list, hasSize(2));
         list.forEach(s -> assertThat(s, instanceOf(ServiceInterface.class)));

@@ -25,12 +25,12 @@ import org.slf4j.LoggerFactory;
  * <p>
  * These Checks are performed:
  * <ol>
- *   <li>duplicated FQCNs</li>
- *   <li>dependency cycles</li>
- *   <li>dependency availability</li>
- *   <li>class availability</li>
- *   <li>constructor visibility</li>
- *   <li>constructor count</li>
+ * <li>duplicated FQCNs</li>
+ * <li>dependency cycles</li>
+ * <li>dependency availability</li>
+ * <li>class availability</li>
+ * <li>constructor visibility</li>
+ * <li>constructor count</li>
  * </ol>
  */
 class IntegrityCheck {
@@ -113,7 +113,7 @@ class IntegrityCheck {
             });
     }
 
-    private void collectConstructors(ArrayList<Constructor> l, Constructor<?>[] arr) {
+    private void collectConstructors(List<Constructor> l, Constructor<?>[] arr) {
         if (arr.length == 0) {
             return;
         }

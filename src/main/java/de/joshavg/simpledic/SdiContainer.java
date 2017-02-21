@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -126,11 +127,38 @@ public class SdiContainer implements SdiContainerInterface {
      * @param clz parent class or interface
      * @return the list with instances, or an empty list if nothing is found
      */
+    @Override
     @SuppressWarnings("WeakerAccess")
     public <T> List<T> getInstancesThatImplement(Class<T> clz) {
         LOG.trace("instances of interface {} ordered", clz);
+        return getInstancesThatMatch(def -> clz.isAssignableFrom(def.getClz()), clz);
+    }
+
+    /**
+     * returns all registered services that match the given predicate on the services' definition
+     *
+     * @param predicate match criteria
+     * @return all services that match the given predicate
+     */
+    @Override
+    public List<Object> getInstancesThatMatch(Predicate<ServiceDefinition> predicate) {
+        LOG.trace("testing all known services against the given predicate");
+        return getInstancesThatMatch(predicate, Object.class);
+    }
+
+    /**
+     * returns all registered services that match the given predicate on the services' definition
+     *
+     * @param predicate match criteria
+     * @param clz the type that is common to all services that shall be returned
+     * @param <T> the type of the returned objects
+     * @return all services that match the given predicate
+     */
+    @Override
+    public <T> List<T> getInstancesThatMatch(Predicate<ServiceDefinition> predicate, Class<T> clz) {
+        LOG.trace("testing all known services against the given predicate");
         return definitions.stream()
-            .filter(d -> clz.isAssignableFrom(d.getClz()))
+            .filter(predicate)
             .map(ServiceDefinition::getClz)
             .map(c -> clz.cast(getInstance(c)))
             .collect(Collectors.toList());
