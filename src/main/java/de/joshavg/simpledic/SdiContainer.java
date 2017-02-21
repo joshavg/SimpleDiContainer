@@ -20,10 +20,10 @@ import org.slf4j.LoggerFactory;
  * and creates instances of defined services
  * <p>
  * Services are given arbitrary names and can be defined as singletons:
- * <code><pre>
+ * <pre><code>
  * service.servicename: tld.vendor.project.ServiceClass
  * service.servicename.singleton: true
- * </pre></code>
+ * </code></pre>
  * Service names must match the regular expression <code>^service\.[^.]+$</code>
  * <p>
  * Services declare their dependencies via their constructor. Only one
