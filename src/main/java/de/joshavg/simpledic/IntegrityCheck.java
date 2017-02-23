@@ -10,6 +10,8 @@ import de.joshavg.simpledic.exception.integrity.NoVisibleConstructor;
 import de.joshavg.simpledic.exception.integrity.SdicClassNotFound;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -47,12 +49,24 @@ class IntegrityCheck {
     }
 
     void check() {
+        // build definitions
         buildDefinitions();
         fetchConstructors();
 
+        // check definitions
         checkConstructorDependencies();
         checkDuplicateServices();
         checkCycles();
+    }
+
+    @VisibleForTesting
+    static Class<?> warpSupplier(Class<?> clz) {
+        if(clz != Supplier.class) {
+            return clz;
+        }
+
+        ParameterizedType superclass = (ParameterizedType) clz.getGenericSuperclass();
+        return (Class<?>) superclass.getActualTypeArguments()[0];
     }
 
     private void buildDefinitions() {
