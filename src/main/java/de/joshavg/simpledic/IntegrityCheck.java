@@ -1,5 +1,6 @@
 package de.joshavg.simpledic;
 
+import com.google.common.annotations.VisibleForTesting;
 import de.joshavg.simpledic.exception.ClassNotRegistered;
 import de.joshavg.simpledic.exception.integrity.DependencyCycleDetected;
 import de.joshavg.simpledic.exception.integrity.DependencyNotSatisfied;
@@ -46,24 +47,18 @@ class IntegrityCheck {
     }
 
     void check() {
-        List<Class<?>> services = fetchAllServices();
-        checkConstructorDependencies(services);
-        checkDuplicateServices(services);
+        buildDefinitions();
+        fetchConstructors();
+
+        checkConstructorDependencies();
+        checkDuplicateServices();
         checkCycles();
     }
 
-    private void checkDuplicateServices(List<Class<?>> services) {
-        int size = services.size();
-        int distinctSize = services.stream().distinct().collect(Collectors.toList()).size();
-        if (size != distinctSize) {
-            throw new DuplicatedServiceClassesFound();
-        }
-    }
-
-    private List<Class<?>> fetchAllServices() {
-        return props.entrySet().stream()
+    private void buildDefinitions() {
+        props.entrySet().stream()
             .filter(e -> isServiceName(e.getKey().toString()))
-            .map(entry -> {
+            .forEach(entry -> {
                 String key = entry.getKey().toString();
                 String value = entry.getValue().toString();
 
@@ -73,47 +68,30 @@ class IntegrityCheck {
                     definitions.add(new ServiceDefinition()
                         .setClz(clz)
                         .setName(key)
-                        .setSingleton(isSingleton(key)));
-                    return clz;
+                        .setSingleton(isSingleton(props, key)));
                 } catch (ClassNotFoundException e) {
                     throw new SdicClassNotFound(e);
-                }
-            }).collect(Collectors.toList());
-    }
-
-    private boolean isSingleton(String name) {
-        return props.containsKey(name + ".singleton") && "true"
-            .equals(props.get(name + ".singleton"));
-    }
-
-    private void checkConstructorDependencies(List<Class<?>> services) {
-        services.stream()
-            // get the first and only constructor
-            .map(Class::getDeclaredConstructors)
-            .collect(ArrayList::new,
-                this::collectConstructors,
-                List::addAll)
-            // get all parameter types
-            .stream()
-            .map(Constructor::getParameterTypes)
-            .collect((Supplier<ArrayList<Class<?>>>) ArrayList::new,
-                (l, arr) -> {
-                    List<Class<?>> types = Arrays.asList(arr);
-                    l.addAll(types);
-                },
-                List::addAll)
-            // search for services with needed types
-            .stream()
-            .distinct()
-            .forEach((Class<?> t) -> {
-                LOG.info("found service dependency: {}", t);
-                if (!services.contains(t)) {
-                    throw new DependencyNotSatisfied(t);
                 }
             });
     }
 
-    private void collectConstructors(List<Constructor> l, Constructor<?>[] arr) {
+    @VisibleForTesting
+    static boolean isSingleton(Properties props, String name) {
+        return props.containsKey(name + ".singleton") && "true"
+            .equals(props.get(name + ".singleton"));
+    }
+
+    private void fetchConstructors() {
+        List<Class<?>> services = definitions.stream()
+            .map(ServiceDefinition::getClz)
+            .collect(Collectors.toList());
+
+        services.stream()
+            .map(Class::getDeclaredConstructors)
+            .forEach(this::collectConstructors);
+    }
+
+    private void collectConstructors(Constructor<?>[] arr) {
         if (arr.length == 0) {
             return;
         }
@@ -127,7 +105,6 @@ class IntegrityCheck {
             throw new NoVisibleConstructor(clz);
         }
 
-        l.add(arr[0]);
         findDefinition(clz).setConstructor(arr[0]);
     }
 
@@ -140,6 +117,43 @@ class IntegrityCheck {
         }
 
         return first.get();
+    }
+
+    private void checkConstructorDependencies() {
+        definitions.stream()
+            .map(ServiceDefinition::getConstructor)
+            // get all parameter types
+            .map(Constructor::getParameterTypes)
+            .collect((Supplier<ArrayList<Class<?>>>) ArrayList::new,
+                (l, arr) -> {
+                    List<Class<?>> types = Arrays.asList(arr);
+                    l.addAll(types);
+                },
+                List::addAll)
+            // search for services with needed types
+            .stream()
+            .distinct()
+            .forEach((Class<?> t) -> {
+                boolean typeKnown = definitions.stream()
+                    .map(ServiceDefinition::getClz)
+                    .anyMatch(c -> c == t);
+                LOG.info("found service dependency: {}", t);
+                if (!typeKnown) {
+                    throw new DependencyNotSatisfied(t);
+                }
+            });
+    }
+
+    private void checkDuplicateServices() {
+        int size = definitions.size();
+        int distinctSize = definitions.stream()
+            .map(ServiceDefinition::getClz)
+            .distinct()
+            .collect(Collectors.toList())
+            .size();
+        if (size != distinctSize) {
+            throw new DuplicatedServiceClassesFound();
+        }
     }
 
     private void checkCycles() {
