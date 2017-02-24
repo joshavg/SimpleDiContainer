@@ -113,7 +113,7 @@ public class SdiContainer implements SdiContainerInterface {
         }
 
         try {
-            T instance = new Instantiator<>(clz, this).createInstance();
+            T instance = new Instantiator<T>(definition, this).createInstance();
             handleSingleton(definition, instance);
             return instance;
         } catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {

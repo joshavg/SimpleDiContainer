@@ -42,4 +42,9 @@ public class ErrorTests {
     public void loadUnknownFile() {
         SdiContainer.load("unknown.properties");
     }
+
+    @Test(expected = DependencyNotSatisfied.class)
+    public void unknownSupplierGetsRecognized() {
+        SdiContainer.load("unknownSupplier.properties");
+    }
 }

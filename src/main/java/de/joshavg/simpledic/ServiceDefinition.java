@@ -1,15 +1,28 @@
 package de.joshavg.simpledic;
 
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-class ServiceDefinition {
+public class ServiceDefinition {
 
     private Class<?> clz;
     private String name;
     private Constructor<?> constructor;
     private boolean isSingleton;
+    private List<Dependency> dependencies = Collections.emptyList();
 
-    Class<?> getClz() {
+    void setDependencies(List<Dependency> types) {
+        dependencies = types;
+    }
+
+    List<Dependency> getDependencies() {
+        return new ArrayList<>(dependencies);
+    }
+
+    @SuppressWarnings("WeakerAccess")
+    public Class<?> getClz() {
         return clz;
     }
 
@@ -18,7 +31,8 @@ class ServiceDefinition {
         return this;
     }
 
-    String getName() {
+    @SuppressWarnings("WeakerAccess")
+    public String getName() {
         return name;
     }
 
@@ -36,7 +50,8 @@ class ServiceDefinition {
         return this;
     }
 
-    boolean isSingleton() {
+    @SuppressWarnings("WeakerAccess")
+    public boolean isSingleton() {
         return isSingleton;
     }
 
@@ -62,6 +77,7 @@ class ServiceDefinition {
         if (!clz.equals(that.clz)) {
             return false;
         }
+        //noinspection SimplifiableIfStatement
         if (!name.equals(that.name)) {
             return false;
         }

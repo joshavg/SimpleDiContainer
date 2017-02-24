@@ -10,10 +10,7 @@ import de.joshavg.simpledic.exception.integrity.NoVisibleConstructor;
 import de.joshavg.simpledic.exception.integrity.SdicClassNotFound;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
@@ -54,19 +51,9 @@ class IntegrityCheck {
         fetchConstructors();
 
         // check definitions
-        checkConstructorDependencies();
+        checkDependencies();
         checkDuplicateServices();
         checkCycles();
-    }
-
-    @VisibleForTesting
-    static Class<?> warpSupplier(Class<?> clz) {
-        if(clz != Supplier.class) {
-            return clz;
-        }
-
-        ParameterizedType superclass = (ParameterizedType) clz.getGenericSuperclass();
-        return (Class<?>) superclass.getActualTypeArguments()[0];
     }
 
     private void buildDefinitions() {
@@ -110,16 +97,21 @@ class IntegrityCheck {
             return;
         }
 
-        Class<?> clz = arr[0].getDeclaringClass();
+        Constructor<?> constructor = arr[0];
+        Class<?> clz = constructor.getDeclaringClass();
         if (arr.length > 1) {
             throw new MoreThanOneConstructor(clz);
         }
 
-        if (!Modifier.isPublic(arr[0].getModifiers())) {
+        if (!Modifier.isPublic(constructor.getModifiers())) {
             throw new NoVisibleConstructor(clz);
         }
 
-        findDefinition(clz).setConstructor(arr[0]);
+        ServiceDefinition definition = findDefinition(clz);
+        definition.setConstructor(constructor);
+
+        List<Dependency> types = new ConstructorAnalyzer(constructor).getTypes();
+        definition.setDependencies(types);
     }
 
     private ServiceDefinition findDefinition(Class<?> clz) {
@@ -133,27 +125,23 @@ class IntegrityCheck {
         return first.get();
     }
 
-    private void checkConstructorDependencies() {
+    private void checkDependencies() {
         definitions.stream()
-            .map(ServiceDefinition::getConstructor)
+            .map(ServiceDefinition::getDependencies)
             // get all parameter types
-            .map(Constructor::getParameterTypes)
-            .collect((Supplier<ArrayList<Class<?>>>) ArrayList::new,
-                (l, arr) -> {
-                    List<Class<?>> types = Arrays.asList(arr);
-                    l.addAll(types);
-                },
+            .collect((Supplier<ArrayList<Dependency>>) ArrayList::new,
+                List::addAll,
                 List::addAll)
             // search for services with needed types
             .stream()
             .distinct()
-            .forEach((Class<?> t) -> {
+            .forEach((Dependency d) -> {
                 boolean typeKnown = definitions.stream()
                     .map(ServiceDefinition::getClz)
-                    .anyMatch(c -> c == t);
-                LOG.info("found service dependency: {}", t);
+                    .anyMatch(c -> c == d.getType());
+                LOG.info("found service dependency: {}", d.getType());
                 if (!typeKnown) {
-                    throw new DependencyNotSatisfied(t);
+                    throw new DependencyNotSatisfied(d.getType());
                 }
             });
     }
@@ -186,7 +174,9 @@ class IntegrityCheck {
             def = findDefinition(paramClz);
         }
 
-        Class<?>[] parameterTypes = def.getConstructor().getParameterTypes();
+        List<Class<?>> parameterTypes = def.getDependencies().stream()
+            .map(Dependency::getType)
+            .collect(Collectors.toList());
         for (Class<?> innerParamClz : parameterTypes) {
             checkConstructorParameter(rootClz, innerParamClz);
         }

@@ -1,11 +1,9 @@
 package de.joshavg.simpledic;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.Properties;
-import java.util.function.Supplier;
 import org.junit.Test;
 
 public class IntegrityCheckTest {
@@ -28,12 +26,6 @@ public class IntegrityCheckTest {
         assertThat(IntegrityCheck.isSingleton(props, "service.a"), is(true));
         assertThat(IntegrityCheck.isSingleton(props, "service.b"), is(false));
         assertThat(IntegrityCheck.isSingleton(props, "service.c"), is(false));
-    }
-
-    @Test
-    public void testWarpSupplier() {
-        Supplier<String> stringSupplier = () -> "";
-        assertThat(IntegrityCheck.warpSupplier(stringSupplier.getClass()), sameInstance(String.class));
     }
 
 }
