@@ -9,11 +9,11 @@ public class IntegrityCheckTest {
 
     @Test
     public void servicesStartWithServiceDot() {
-        assertThat(IntegrityCheck.isServiceName("dingens"), is(false));
-        assertThat(IntegrityCheck.isServiceName("service"), is(false));
-        assertThat(IntegrityCheck.isServiceName("service."), is(false));
-        assertThat(IntegrityCheck.isServiceName("service.aad-s"), is(true));
-        assertThat(IntegrityCheck.isServiceName("service.a.singleton"), is(false));
+        assertThat(PropertiesAnalyzer.isServiceName("dingens"), is(false));
+        assertThat(PropertiesAnalyzer.isServiceName("service"), is(false));
+        assertThat(PropertiesAnalyzer.isServiceName("service."), is(false));
+        assertThat(PropertiesAnalyzer.isServiceName("service.aad-s"), is(true));
+        assertThat(PropertiesAnalyzer.isServiceName("service.a.singleton"), is(false));
     }
 
 }

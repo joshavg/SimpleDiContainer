@@ -38,11 +38,11 @@ public class SdiContainer implements SdiContainerInterface {
     private static final Logger LOG = LoggerFactory.getLogger(SdiContainer.class);
 
     private final List<ServiceDefinition> definitions;
-    private final Map<ServiceDefinition, Object> singletons;
+    private final SingletonCache singletonCache;
 
     private SdiContainer(List<ServiceDefinition> definitions) {
         this.definitions = definitions;
-        this.singletons = new HashMap<>();
+        this.singletonCache = new SingletonCache();
     }
 
     /**
@@ -76,9 +76,10 @@ public class SdiContainer implements SdiContainerInterface {
             throw new ContainerInitException("failed loading properties", e);
         }
 
-        IntegrityCheck integrityCheck = new IntegrityCheck(props);
+        List<ServiceDefinition> definitions = new PropertiesAnalyzer(props).createDefinitions();
+        IntegrityCheck integrityCheck = new IntegrityCheck(definitions);
         integrityCheck.check();
-        return new SdiContainer(integrityCheck.getDefinitions());
+        return new SdiContainer(definitions);
     }
 
     private <T> ServiceDefinition getDefinition(Class<T> clz) {
@@ -108,8 +109,8 @@ public class SdiContainer implements SdiContainerInterface {
 
         LOG.debug("service name is {}", definition.getName());
 
-        if (isStoredAsSingleton(definition)) {
-            return clz.cast(singletons.get(definition));
+        if (singletonCache.isStored(definition)) {
+            return clz.cast(singletonCache.get(definition));
         }
 
         try {
@@ -166,12 +167,8 @@ public class SdiContainer implements SdiContainerInterface {
 
     private <T> void handleSingleton(ServiceDefinition definition, T instance) {
         if (definition.isSingleton()) {
-            singletons.put(definition, instance);
+            singletonCache.store(definition, instance);
         }
-    }
-
-    private boolean isStoredAsSingleton(ServiceDefinition def) {
-        return singletons.containsKey(def);
     }
 
 }

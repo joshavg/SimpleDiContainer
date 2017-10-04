@@ -13,4 +13,5 @@ public interface SdiContainerInterface {
     <T> List<T> getInstancesThatMatch(Predicate<ServiceDefinition> predicate, Class<T> type);
 
     List<Object> getInstancesThatMatch(Predicate<ServiceDefinition> predicate);
+
 }

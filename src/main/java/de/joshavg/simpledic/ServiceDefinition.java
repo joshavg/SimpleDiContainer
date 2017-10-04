@@ -7,6 +7,7 @@ class ServiceDefinition {
     private Class<?> clz;
     private String name;
     private Constructor<?> constructor;
+    private Constructor<?>[] constructors;
     private boolean isSingleton;
 
     Class<?> getClz() {
@@ -31,9 +32,18 @@ class ServiceDefinition {
         return constructor;
     }
 
-    ServiceDefinition setConstructor(Constructor<?> constructor) {
-        this.constructor = constructor;
+    ServiceDefinition setConstructors(Constructor<?>... constructors) {
+        this.constructors = constructors;
+
+        if (constructors.length > 0) {
+            constructor = constructors[0];
+        }
+
         return this;
+    }
+
+    Constructor[] getConstructors() {
+        return constructors;
     }
 
     boolean isSingleton() {
