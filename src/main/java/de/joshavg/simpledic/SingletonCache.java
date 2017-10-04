@@ -20,7 +20,9 @@ class SingletonCache {
     }
 
     void store(ServiceDefinition def, Object instance) {
-        instances.put(def, instance);
+        if (!isStored(def)) {
+            instances.put(def, instance);
+        }
     }
 
 }
